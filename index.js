@@ -28,8 +28,8 @@ setInterval(() => {
 
 // ===== 配置 =====
 const CONFIG = {
-  host: 'joinumc.falixsrv.me',
-  port: 30869,
+  host: 'eu.freegamehost.xyz',
+  port: 5573,
   version: false,
   auth: 'offline',
   checkTimeoutInterval: 180000
