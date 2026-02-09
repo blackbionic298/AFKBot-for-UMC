@@ -28,8 +28,8 @@ setInterval(() => {
 
 // ===== 配置 =====
 const CONFIG = {
-  host: 'eu.freegamehost.xyz',
-  port: 5573,
+  host: 'mc1956982.fmcs.cloud',
+  port: 25565,
   version: false,
   auth: 'offline',
   checkTimeoutInterval: 180000
