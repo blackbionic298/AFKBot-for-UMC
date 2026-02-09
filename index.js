@@ -35,8 +35,8 @@ const CONFIG = {
   checkTimeoutInterval: 180000
 };
 
-const BOT_USERNAME = 'UMC_AFk_' + Math.random().toString(36).slice(2, 7);
-const AUTHME_PASSWORD = process.env.AUTHME_PASSWORD || 'MySuperSecurePass123!';
+const BOT_USERNAME = 'accesscontrol';
+const AUTHME_PASSWORD = process.env.AUTHME_PASSWORD || 'deutschland';
 
 let bot;
 let jumpInterval;
