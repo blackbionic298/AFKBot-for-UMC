@@ -28,7 +28,7 @@ setInterval(() => {
 
 // ===== 配置 =====
 const CONFIG = {
-  host: 'mc1956982.fmcs.cloud',
+  host: 'mi-667c7cd2.axenthost.me',
   port: 25565,
   version: false,
   auth: 'offline',
