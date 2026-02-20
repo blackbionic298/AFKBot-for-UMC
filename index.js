@@ -29,7 +29,7 @@ setInterval(() => {
 // ===== 配置 =====
 const CONFIG = {
   host: 'mi-667c7cd2.axenthost.me',
-  port: 25565,
+  port: 43046,
   version: false,
   auth: 'offline',
   checkTimeoutInterval: 180000
