@@ -26,7 +26,7 @@ setInterval(() => {
 // ===== 配置 =====
 const CONFIG = {
   host: 'umc.play.hosting',
-  port: 50287,                      // ← 去面板确认当前端口，如果变了改这里！
+  port: 25565,                      // ← 去面板确认当前端口，如果变了改这里！
   version: '1.21',                  // 强制 1.21，避免自动检测出错
   auth: 'offline',
   checkTimeoutInterval: 300000      // 延长到 5 分钟
