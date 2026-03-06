@@ -125,7 +125,7 @@ function startBot() {
       }
 
       // 新增功能：!home light → /tpahere light
-      if (msgLower === '!home spawn') {
+      if (msgLower === '!home light') {
         console.log(`[命令] ${username} → !home light → 执行 /tpahere black_1816`);
         bot.chat('/tpahere black_1816');
       }
