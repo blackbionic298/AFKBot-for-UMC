@@ -32,7 +32,7 @@ const CONFIG = {
   checkTimeoutInterval: 300000
 };
 
-const BOT_USERNAME = 'HostByAI';
+const BOT_USERNAME = 'LiveChatBot';
 const AUTHME_PASSWORD = process.env.AUTHME_PASSWORD || 'deutschland';
 const ALLOWED_USER = 'black_1816'; // 只允许这个玩家控制 bot
 
@@ -125,7 +125,7 @@ function startBot() {
       }
 
       // 新增功能：!home light → /tpahere light
-      if (msgLower === '!home light') {
+      if (msgLower === '!home spawn') {
         console.log(`[命令] ${username} → !home light → 执行 /tpahere black_1816`);
         bot.chat('/tpahere black_1816');
       }
