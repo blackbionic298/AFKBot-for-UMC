@@ -149,8 +149,8 @@ function startBot() {
       }
 
       // !home light → /tpahere black_1816
-      if (msgLower === '!home light') {
-        console.log(`[命令] ${username} → !home light → 执行 /tpahere black_1816`);
+      if (msgLower === '!home base') {
+        console.log(`[命令] ${username} → !home base → 执行 /tpahere black_1816`);
         bot.chat('/tpahere black_1816');
       }
     });
