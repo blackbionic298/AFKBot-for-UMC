@@ -25,9 +25,9 @@ setInterval(() => {
 
 // ===== 配置 =====
 const CONFIG = {
-  host: 'umc.play.hosting',
+  host: 'fan.play.hosting',
   port: 25565,
-  version: '1.21',
+  version: '1.21.11',
   auth: 'offline',
   checkTimeoutInterval: 300000
 };
