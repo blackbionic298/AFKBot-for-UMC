@@ -27,7 +27,7 @@ setInterval(() => {
 const CONFIG = {
   host: 'fan.play.hosting',
   port: 25565,
-  version: '1.21.11',
+  version: '1.21',
   auth: 'offline',
   checkTimeoutInterval: 300000
 };
