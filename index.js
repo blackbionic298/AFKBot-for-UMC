@@ -1,176 +1,116 @@
 const mineflayer = require('mineflayer');
-const express = require('express');
-const fetch = require('node-fetch');
+const chalk = require('chalk');
+const fs = require('fs');
+const path = require('path');
+const { pathfinder, Movements, goals: { GoalBlock } } = require('mineflayer-pathfinder');
+const { loader: autoEat } = require('mineflayer-auto-eat');
+const { loader: baritone } = require('@miner-org/mineflayer-baritone');
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// ===== HTTP 保活服务器（Render 必须有 HTTP 接口） =====
-const app = express();
-const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-  res.send('AFK Bot 在线 - Running on Render');
-});
-app.listen(PORT, () => {
-  console.log(`[Render] HTTP server started on port ${PORT}`);
-});
+const configPath = path.join(__dirname, 'config.json');
+const mobConfigPath = path.join(__dirname, 'mobConfig.json');
 
-// ===== 自 ping 保活（防止 Render Free 层 15 分钟休眠） =====
-const RENDER_URL = process.env.RENDER_EXTERNAL_HOSTNAME
-  ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`
-  : `http://localhost:${PORT}`;
-setInterval(() => {
-  console.log('[Self-Ping] Pinging:', RENDER_URL);
-  fetch(RENDER_URL).catch(err => {
-    console.error('[Self-Ping] Failed:', err.message);
-  });
-}, 300000); // 每 5 分钟 ping 一次
+// -------------------------------------- chalk style color definitions
 
-// ===== 配置 =====
-const CONFIG = {
-  host: 'eternel.eu',
-  port: 25565,
-  version: '1.21',
-  auth: 'offline',
-  checkTimeoutInterval: 300000
+const style = {
+  botColor: chalk.yellow.bold,
+  userColor: chalk.yellow.bold,
+  login: chalk.green.bold('[LOGIN]'),
+  chat: chalk.whiteBright.bold('[CHAT]'),
+  whisper: chalk.magenta.bold('[WHISPER]'),
+  system: chalk.magenta.bold('[SYSTEM]'),
+  cmd: chalk.cyanBright.bold('[CMD]'),
+  denied: chalk.red.bold('[DENIED]'),
+  error: chalk.red.bold('[ERROR]'),
+  time: (t) => chalk.blueBright(`[${t}]`)
 };
 
-const BOT_USERNAME = 'GleidyShulkerBox';
-const AUTHME_PASSWORD = process.env.AUTHME_PASSWORD || 'deutschland';
-const ALLOWED_USER = 'GleidShulkerBox'; // 只允许这个玩家控制 bot
-
-let bot;
-let jumpInterval;
-let reconnecting = false;
-let reconnectAttempts = 0;
-
-function startBot() {
-  if (reconnecting) return;
-  reconnecting = true;
-  console.log('⏳ 连接中:', BOT_USERNAME);
-
-  bot = mineflayer.createBot({
-    ...CONFIG,
-    username: BOT_USERNAME
-  });
-
-  // 自动接受资源包
-  bot.on('resourcePack', () => {
-    console.log('[资源包] 收到 → 自动接受');
-    bot.acceptResourcePack();
-  });
-
-  bot.once('spawn', () => {
-    console.log('✅ 已进服，等待 5 秒后尝试 AuthMe');
-    setTimeout(() => {
-      reconnecting = false;
-      bot.chat(`/login ${AUTHME_PASSWORD}`);
-      bot.chat(`/register ${AUTHME_PASSWORD} ${AUTHME_PASSWORD}`);
-    }, 5000);
-
-    // AuthMe + 私聊处理
-    bot.on('messagestr', (msg) => {
-      const m = msg.toLowerCase();
-
-      // AuthMe 相关（保持不变）
-      if (m.includes('/login')) {
-        console.log('→ 检测到登录');
-        bot.chat(`/login ${AUTHME_PASSWORD}`);
-      }
-      if (
-        m.includes('success') ||
-        m.includes('logged') ||
-        m.includes('验证成功') ||
-        m.includes('已登录') ||
-        m.includes('welcome')
-      ) {
-        console.log('✅ AuthMe 完成，开始 AFK');
-        startAntiAFK();
-        reconnectAttempts = 0;
-      }
-
-      // ── 针对 [black_1816 -> GleidShulkerBot] 格式的私聊 ──
-      const whisperPattern = new RegExp(`^\\[${ALLOWED_USER.toLowerCase()} -> ${BOT_USERNAME.toLowerCase()}\\]\\s*(.+)$`, 'i');
-      const match = msg.match(whisperPattern);
-
-      if (match && match[1]) {
-        const content = match[1].trim();
-
-        if (content.startsWith('!')) {
-          const sayContent = content.slice(1).trim();
-          if (sayContent.length > 0) {
-            console.log(`[私聊 -> 自动说] ${ALLOWED_USER} → ${sayContent}`);
-            bot.chat(sayContent);
-          }
-        }
-        // 没有 ! 开头 → 不说话
-      }
-    });
-
-    // 公共聊天命令：@aibot xxx 和 !home light（保持不变）
-    bot.on('chat', (username, message) => {
-      if (username === bot.username) return;
-      if (username.toLowerCase() !== ALLOWED_USER.toLowerCase()) return;
-
-      const msgLower = message.toLowerCase().trim();
-
-      const prefix = '@aibot ';
-      if (msgLower.startsWith(prefix)) {
-        const content = message.slice(prefix.length).trim();
-        if (content.length > 0) {
-          console.log(`[Echo @aibot] ${username} → ${content}`);
-          bot.chat(content);
-          return;
-        }
-      }
-
-      if (msgLower === '!home base') {
-        console.log(`[命令] ${username} → !home base → 执行 /tpahere black_1816`);
-        bot.chat('/tpahere black_1816');
-      }
-    });
-  });
-
-  bot.on('kicked', (reason, loggedIn) => {
-    console.log('❌ 被踢出！ 已登录:', loggedIn ? '是' : '否');
-    console.log('踢出原因:', reason);
-    if (typeof reason === 'object' && reason !== null) {
-      console.log('踢出原因 JSON:', JSON.stringify(reason, null, 2));
+function loadJSON(path) {
+    try {
+        const data = fs.readFileSync(path, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        console.log(`${style.error} Error loading ${path}: ${err.message}`);
+        return {};
     }
-    reconnect('被踢出');
-  });
-
-  bot.on('end', () => reconnect('连接结束'));
-
-  bot.on('error', (err) => {
-    console.log('⚠️ 错误:', err.message || err);
-    reconnect('错误: ' + (err.message || '未知'));
-  });
 }
 
-function startAntiAFK() {
-  if (jumpInterval) return;
-  console.log('启动反AFK：每20秒跳一下');
-  jumpInterval = setInterval(() => {
-    if (!bot?.entity) return;
-    bot.setControlState('jump', true);
-    setTimeout(() => bot.setControlState('jump', false), 300);
-  }, 20000);
+let config = loadJSON(configPath);
+let mobConfig = loadJSON(mobConfigPath);
+
+console.log(`${style.system} Config loaded (Config & ${Object.keys(mobConfig).length} Mobs)`);
+
+let killAura = false;
+let autoTotem = true;
+let noTotems = false;
+let isDrinkingOminous = false;
+
+// -------------------------------------- time for chat and console.log
+
+const originalLog = console.log;
+console.log = (...args) => {
+    const timeStr = new Date().toLocaleTimeString();
+    const time = style.time(timeStr);
+
+    if (typeof args[0] === 'string') {
+        args[0] = `${time} ${args[0]}`;
+    } else {
+        args.unshift(time);
+    }
+    originalLog(...args);
+};
+
+// -------------------------------------- hot-reload functions
+
+function hotReload(path, label) {
+    try {
+        const data = fs.readFileSync(path, 'utf8');
+        console.log(`${style.system} ${label} was reloaded`);
+        return JSON.parse(data);
+    } catch (err) {
+        console.log(`${style.error} Reloading ${label} failed: ${err.message}`);
+        return null; 
+    }
 }
 
-function reconnect(reason = '未知') {
-  console.log('❌ 掉线:', reason);
-  try { bot?.quit(); } catch {}
-  bot?.removeAllListeners();
-  bot = null;
-  if (jumpInterval) {
-    clearInterval(jumpInterval);
-    jumpInterval = null;
+fs.watchFile(configPath, (curr, prev) => {
+    if (curr.mtime <= prev.mtime) return;
+    const newData = hotReload(configPath, 'Config');
+    if (newData) config = newData;
+});
+
+fs.watchFile(mobConfigPath, (curr, prev) => {
+    if (curr.mtime <= prev.mtime) return;
+    const newData = hotReload(mobConfigPath, 'MobConfig');
+    if (newData) mobConfig = newData;
+});
+
+// -------------------------------------- create bot
+
+const bot = mineflayer.createBot({
+  host: config.serverHost,
+  username: config.botUsername,
+  password: config.botPassword,
+  version: config.mcVersion,
+  auth: 'offline',
+  checkTimeoutInterval: 60 * 1000,
+  hideErrors: true,
+});
+
+// -------------------------------------- register / login
+
+bot.once('messagestr', (message) => {
+  
+  if (message.includes('/register')) {
+    console.log(`${style.system} Please register using /register <password> <password>`);
+    setTimeout(() => {
+    bot.chat(`/register ${config.botPassword} ${config.botPassword}`);
+    }, 2000);
+
+    } else if (message.includes('/login')) {
+    console.log(`${style.system} Please login using /login <password>`);
+    setTimeout(() => {
+    bot.chat(`/login ${config.botPassword}`);
+    }, 2000);
   }
-  reconnectAttempts++;
-  const delay = Math.min(30000 + (reconnectAttempts - 1) * 15000, 180000);
-  console.log(`将在 ${delay/1000} 秒后第 ${reconnectAttempts} 次重连...`);
-  setTimeout(() => {
-    reconnecting = false;
-    startBot();
-  }, delay);
-}
-
-startBot();
+});
