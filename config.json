@@ -1,10 +1,10 @@
 {
   "serverHost": "eternel.eu",
-  "botUsername": "DeinBotName",
-  "botPassword": "DeinPasswort",
+  "botUsername": "GleidyShulkerBox",
+  "botPassword": "deutsch_land",
   "mcVersion": "1.21.1",
-  "operators": ["Playername","Playername"],
-  "admins": ["Playername","Playername"],
+  "operators": ["GleidShulkerBox","Traumern"],
+  "admins": ["black_1816","Rolger178"],
   "allowedUser": [],
   "reconnectDelay": 5000
 }
