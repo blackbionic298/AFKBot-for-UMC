@@ -1,7 +1,7 @@
 {
-  "name": "mineflayer-bot",
+  "name": "afkbot-umc",
   "version": "1.0.0",
-  "description": "Mineflayer bot on Render",
+  "description": "Mineflayer AFK Bot for UMC",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,10 +10,9 @@
     "mineflayer": "^4.26.0",
     "mineflayer-pathfinder": "^2.4.5",
     "mineflayer-auto-eat": "^3.0.0",
-    "@miner-org/mineflayer-baritone": "^1.0.0",   // 注意：这个包可能不稳定或需要检查最新版
     "chalk": "^5.3.0"
   },
   "engines": {
-    "node": "22.x"        // 或 "20.x"，Render 默认用较新版本，建议指定
+    "node": "22.x"
   }
 }
