@@ -25,16 +25,16 @@ setInterval(() => {
 
 // ===== 配置 =====
 const CONFIG = {
-  host: 'fan.play.hosting',
+  host: 'eternel.eu',
   port: 25565,
   version: '1.21',
   auth: 'offline',
   checkTimeoutInterval: 300000
 };
 
-const BOT_USERNAME = 'HostByAI';
+const BOT_USERNAME = 'GleidyShulkerBox';
 const AUTHME_PASSWORD = process.env.AUTHME_PASSWORD || 'deutschland';
-const ALLOWED_USER = 'black_1816','GleidShulkerBox'; // 只允许这个玩家控制 bot
+const ALLOWED_USER = 'GleidShulkerBox'; // 只允许这个玩家控制 bot
 
 let bot;
 let jumpInterval;
@@ -70,10 +70,6 @@ function startBot() {
       const m = msg.toLowerCase();
 
       // AuthMe 相关（保持不变）
-      if (m.includes('/register')) {
-        console.log('→ 检测到注册');
-        bot.chat(`/register ${AUTHME_PASSWORD} ${AUTHME_PASSWORD}`);
-      }
       if (m.includes('/login')) {
         console.log('→ 检测到登录');
         bot.chat(`/login ${AUTHME_PASSWORD}`);
