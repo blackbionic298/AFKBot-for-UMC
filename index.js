@@ -51,9 +51,9 @@ console.log = (...args) => {
     originalLog(...args);
 };
 
-// ====================== 自动重连逻辑（针对严格 AntiBot） ======================
+// ====================== 自动重连逻辑（加强版） ======================
 let reconnectAttempts = 0;
-const maxReconnects = 8;   // 最多尝试8次
+const maxReconnects = 6;   // 最多尝试6次，避免一直刷服务器
 
 function createBot() {
     console.log(`${style.system} Creating bot... (Attempt ${reconnectAttempts + 1}/${maxReconnects})`);
@@ -64,29 +64,25 @@ function createBot() {
         password: config.botPassword,
         version: config.mcVersion,
         auth: 'offline',
-        checkTimeoutInterval: 60 * 1000,
+        checkTimeoutInterval: 120 * 1000,   // 增加超时时间
         hideErrors: true,
     });
 
-    // Auto register / login
+    // Auto register / login - 增加等待时间
     bot.once('messagestr', (message) => {
         if (message.includes('/register')) {
             console.log(`${style.system} Detected register prompt, sending...`);
-            setTimeout(() => {
-                bot.chat(`/register ${config.botPassword} ${config.botPassword}`);
-            }, 5000);
+            setTimeout(() => bot.chat(`/register ${config.botPassword} ${config.botPassword}`), 8000);
         } else if (message.includes('/login')) {
             console.log(`${style.system} Detected login prompt, sending...`);
-            setTimeout(() => {
-                bot.chat(`/login ${config.botPassword}`);
-            }, 5000);
+            setTimeout(() => bot.chat(`/login ${config.botPassword}`), 8000);
         }
     });
 
     bot.on('login', () => {
-        console.log(`${style.login} Bot logged in successfully!`);
+        console.log(`${style.login} Bot logged in successfully! 🎉`);
         console.log(`${style.system} Connected to ${config.serverHost}`);
-        reconnectAttempts = 0;   // 成功登录后重置计数
+        reconnectAttempts = 0;
     });
 
     bot.on('spawn', () => {
@@ -94,7 +90,8 @@ function createBot() {
     });
 
     bot.on('kicked', (reason) => {
-        console.log(`${style.error} Bot was kicked: ${JSON.stringify(reason, null, 2)}`);
+        console.log(`${style.error} Bot was kicked:`);
+        console.log(JSON.stringify(reason, null, 2));
     });
 
     bot.on('error', (err) => {
@@ -106,11 +103,11 @@ function createBot() {
         reconnectAttempts++;
 
         if (reconnectAttempts < maxReconnects) {
-            const delay = config.reconnectDelay || 45000;   // 默认45秒，可在config.json修改
+            const delay = config.reconnectDelay || 60000;   // 默认改为 60 秒
             console.log(`${style.system} Waiting ${delay / 1000} seconds before next attempt (AntiBot protection)...`);
             setTimeout(createBot, delay);
         } else {
-            console.log(`${style.error} Max reconnect attempts (${maxReconnects}) reached. Stopping.`);
+            console.log(`${style.error} Max reconnect attempts reached. Bot stopped.`);
         }
     });
 
