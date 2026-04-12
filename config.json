@@ -3,8 +3,8 @@
   "botUsername": "GleidyShulkerBox",
   "botPassword": "deutsch_land",
   "mcVersion": "1.21.1",
-  "operators": ["GleidShulkerBox","Traumern"],
-  "admins": ["black_1816","Rolger178"],
+  "operators": ["GleidShulkerBox"],
+  "admins": ["GleidShulkerBox"],
   "allowedUser": [],
-  "reconnectDelay": 5000
+  "reconnectDelay": 45000
 }
