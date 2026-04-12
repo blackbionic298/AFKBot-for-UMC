@@ -8,7 +8,6 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const configPath = path.join(__dirname, 'config.json');
 const mobConfigPath = path.join(__dirname, 'mobConfig.json');
 
-// -------------------------------------- chalk style
 const style = {
   login: chalk.green.bold('[LOGIN]'),
   system: chalk.magenta.bold('[SYSTEM]'),
@@ -41,9 +40,9 @@ console.log = (...args) => {
     originalLog(...args);
 };
 
-// ====================== AntiBot 加强版 ======================
+// ====================== 更强 AntiBot 绕过版 ======================
 let reconnectAttempts = 0;
-const maxReconnects = 5;
+const maxReconnects = 4;        // 减少次数，避免被封更久
 let inLoginPhase = false;
 
 function createBot() {
@@ -57,22 +56,29 @@ function createBot() {
         auth: 'offline',
         checkTimeoutInterval: 300 * 1000,
         hideErrors: true,
-        // 下面这行可以帮助绕过部分 AntiBot
         skipValidation: true
     });
 
-    // 监听服务器消息
+    // 连接后先等待很久（模拟玩家加载）
+    bot.once('spawn', () => {
+        console.log(`${style.system} Bot spawned - waiting long time before any action...`);
+        // 额外等待 15 秒
+        setTimeout(() => {
+            console.log(`${style.system} Ready to listen for messages`);
+        }, 15000);
+    });
+
     bot.on('messagestr', (message) => {
         console.log(`${style.system} Server: ${message}`);
 
         if (message.includes('/register') || message.includes('/login')) {
             inLoginPhase = true;
-            console.log(`${style.system} [IMPORTANT] Entered LOGIN PHASE`);
+            console.log(`${style.system} [LOGIN PHASE] Detected! Waiting very long time...`);
 
-            // 长时间随机等待（25~42秒）
-            const delay = 25000 + Math.random() * 17000;
+            // 极长等待：30 ~ 50 秒
+            const delay = 30000 + Math.random() * 20000;
             setTimeout(() => {
-                console.log(`${style.system} Sending password command now...`);
+                console.log(`${style.system} Sending password now...`);
                 if (message.includes('/register')) {
                     bot.chat(`/register ${config.botPassword} ${config.botPassword}`);
                 } else {
@@ -83,11 +89,7 @@ function createBot() {
     });
 
     bot.on('login', () => {
-        console.log(`${style.login} Bot logged in successfully!`);
-    });
-
-    bot.on('spawn', () => {
-        console.log(`${style.system} Bot spawned in the world.`);
+        console.log(`${style.login} Bot logged in!`);
     });
 
     bot.on('kicked', (reason) => {
@@ -96,7 +98,7 @@ function createBot() {
     });
 
     bot.on('error', (err) => {
-        console.log(`${style.error} Bot error: ${err.message}`);
+        console.log(`${style.error} Error: ${err.message}`);
     });
 
     bot.on('end', () => {
@@ -104,11 +106,11 @@ function createBot() {
         reconnectAttempts++;
 
         if (reconnectAttempts < maxReconnects) {
-            const delay = inLoginPhase ? 60000 : 90000;   // AntiBot 阶段等90秒
+            const delay = inLoginPhase ? 70000 : 110000;   // AntiBot 阶段等 110 秒（接近2分钟）
             console.log(`${style.system} Waiting ${delay/1000} seconds before next attempt...`);
             setTimeout(createBot, delay);
         } else {
-            console.log(`${style.error} Max reconnect attempts reached. Stopping.`);
+            console.log(`${style.error} Max attempts reached. Bot stopped.`);
         }
     });
 
