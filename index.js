@@ -78,3 +78,24 @@ bot.once('messagestr', (message) => {
 });
 
 console.log(`${style.system} Bot is starting...`);
+// 保持 bot 运行 + 基础事件监听
+bot.on('login', () => {
+  console.log(`${style.login} Bot logged in successfully!`);
+  console.log(`${style.system} Connected to ${config.serverHost}`);
+});
+
+bot.on('spawn', () => {
+  console.log(`${style.system} Bot has spawned in the world!`);
+});
+
+bot.on('kicked', (reason) => {
+  console.log(`${style.error} Bot was kicked: ${reason}`);
+});
+
+bot.on('error', (err) => {
+  console.log(`${style.error} Bot error: ${err.message}`);
+});
+
+bot.on('end', () => {
+  console.log(`${style.system} Bot disconnected.`);
+});
