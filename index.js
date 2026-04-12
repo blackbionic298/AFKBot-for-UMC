@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const { pathfinder, Movements, goals: { GoalBlock } } = require('mineflayer-pathfinder');
 
+// const { loader: autoEat } = require('mineflayer-auto-eat');   // 等稳定后再取消注释
+// const { loader: baritone } = require('@miner-org/mineflayer-baritone');
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const configPath = path.join(__dirname, 'config.json');
@@ -11,14 +14,8 @@ const mobConfigPath = path.join(__dirname, 'mobConfig.json');
 
 // -------------------------------------- chalk style
 const style = {
-  botColor: chalk.yellow.bold,
-  userColor: chalk.yellow.bold,
   login: chalk.green.bold('[LOGIN]'),
-  chat: chalk.whiteBright.bold('[CHAT]'),
-  whisper: chalk.magenta.bold('[WHISPER]'),
   system: chalk.magenta.bold('[SYSTEM]'),
-  cmd: chalk.cyanBright.bold('[CMD]'),
-  denied: chalk.red.bold('[DENIED]'),
   error: chalk.red.bold('[ERROR]'),
   time: (t) => chalk.blueBright(`[${t}]`)
 };
@@ -38,7 +35,7 @@ let mobConfig = loadJSON(mobConfigPath) || {};
 
 console.log(`${style.system} Config loaded (Config & ${Object.keys(mobConfig).length} Mobs)`);
 
-// -------------------------------------- time prefix for console.log
+// -------------------------------------- time prefix
 const originalLog = console.log;
 console.log = (...args) => {
     const timeStr = new Date().toLocaleTimeString();
@@ -51,9 +48,10 @@ console.log = (...args) => {
     originalLog(...args);
 };
 
-// ====================== 自动重连逻辑（加强版） ======================
+// ====================== 核心逻辑（针对你的服务器流程优化） ======================
 let reconnectAttempts = 0;
-const maxReconnects = 6;   // 最多尝试6次，避免一直刷服务器
+const maxReconnects = 7;
+let inLoginPhase = false;     // 是否已通过 AntiBot，进入登录阶段
 
 function createBot() {
     console.log(`${style.system} Creating bot... (Attempt ${reconnectAttempts + 1}/${maxReconnects})`);
@@ -64,34 +62,47 @@ function createBot() {
         password: config.botPassword,
         version: config.mcVersion,
         auth: 'offline',
-        checkTimeoutInterval: 120 * 1000,   // 增加超时时间
+        checkTimeoutInterval: 180 * 1000,   // 增加超时
         hideErrors: true,
     });
 
-    // Auto register / login - 增加等待时间
-    bot.once('messagestr', (message) => {
-        if (message.includes('/register')) {
-            console.log(`${style.system} Detected register prompt, sending...`);
-            setTimeout(() => bot.chat(`/register ${config.botPassword} ${config.botPassword}`), 8000);
-        } else if (message.includes('/login')) {
-            console.log(`${style.system} Detected login prompt, sending...`);
-            setTimeout(() => bot.chat(`/login ${config.botPassword}`), 8000);
+    // 监听所有服务器消息
+    bot.on('messagestr', (message) => {
+        console.log(`${style.system} Server message: ${message}`);
+
+        // 检测到登录/注册提示 → 进入登录阶段
+        if (message.includes('/register') || message.includes('/login')) {
+            inLoginPhase = true;
+            console.log(`${style.system} === ENTERED LOGIN PHASE === Waiting long time to bypass AntiBot...`);
+
+            // 随机等待 20~32 秒再发送密码（更像真人）
+            const delay = 20000 + Math.random() * 12000;
+            setTimeout(() => {
+                if (message.includes('/register')) {
+                    console.log(`${style.system} Sending /register command now...`);
+                    bot.chat(`/register ${config.botPassword} ${config.botPassword}`);
+                } else if (message.includes('/login')) {
+                    console.log(`${style.system} Sending /login command now...`);
+                    bot.chat(`/login ${config.botPassword}`);
+                }
+            }, delay);
         }
     });
 
     bot.on('login', () => {
-        console.log(`${style.login} Bot logged in successfully! 🎉`);
-        console.log(`${style.system} Connected to ${config.serverHost}`);
-        reconnectAttempts = 0;
+        console.log(`${style.login} Bot successfully logged in to the proxy!`);
     });
 
     bot.on('spawn', () => {
-        console.log(`${style.system} Bot has spawned in the world! Ready.`);
+        console.log(`${style.system} Bot spawned.`);
+        if (inLoginPhase) {
+            console.log(`${style.system} Waiting for transfer to Anarchy server...`);
+        }
     });
 
     bot.on('kicked', (reason) => {
         console.log(`${style.error} Bot was kicked:`);
-        console.log(JSON.stringify(reason, null, 2));
+        console.dir(reason, { depth: null });   // 更清晰显示踢出原因
     });
 
     bot.on('error', (err) => {
@@ -99,12 +110,13 @@ function createBot() {
     });
 
     bot.on('end', () => {
-        console.log(`${style.system} Bot disconnected.`);
+        console.log(`${style.system} Connection ended.`);
         reconnectAttempts++;
 
         if (reconnectAttempts < maxReconnects) {
-            const delay = config.reconnectDelay || 60000;   // 默认改为 60 秒
-            console.log(`${style.system} Waiting ${delay / 1000} seconds before next attempt (AntiBot protection)...`);
+            // AntiBot 阶段等更久，登录阶段等短一点
+            const delay = inLoginPhase ? 50000 : 75000;
+            console.log(`${style.system} Reconnecting in ${delay / 1000} seconds...`);
             setTimeout(createBot, delay);
         } else {
             console.log(`${style.error} Max reconnect attempts reached. Bot stopped.`);
@@ -114,6 +126,6 @@ function createBot() {
     return bot;
 }
 
-// 启动 bot
+// 启动
 console.log(`${style.system} Bot is starting...`);
 createBot();
